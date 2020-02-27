@@ -23,6 +23,7 @@ import (
 
 	"github.com/tazjin/kontemplate/context"
 	"github.com/tazjin/kontemplate/templater"
+	"github.com/tazjin/kontemplate/resetter"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -58,6 +59,10 @@ var (
 	create     = app.Command("create", "Template resources and pass to 'kubectl create'")
 	createFile = create.Arg("file", "Cluster configuration file to use").Required().String()
 
+  reset     = app.Command("reset", "Reset configuration file")
+  resetFile = reset.Arg("file", "Cluster configuration file to use").Required().String()
+
+
 	versionCmd = app.Command("version", "Show kontemplate version")
 )
 
@@ -79,6 +84,9 @@ func main() {
 
 	case create.FullCommand():
 		createCommand()
+
+	case reset.FullCommand():
+		resetCommand()
 
 	case versionCmd.FullCommand():
 		versionCommand()
@@ -182,6 +190,15 @@ func createCommand() {
 	if err := runKubectlWithResources(ctx, &args, resources); err != nil {
 		failWithKubectlError(err)
 	}
+}
+
+func resetCommand() {
+	resetConfigFile, err := resetter.LoadAndResetConfig(resetFile)
+	if err != nil {
+		app.Fatalf("Error resetting config file: %v\n", err)
+	}
+
+	fmt.Println(resetConfigFile)
 }
 
 func loadContextAndResources(file *string) (*context.Context, *[]templater.RenderedResourceSet) {
